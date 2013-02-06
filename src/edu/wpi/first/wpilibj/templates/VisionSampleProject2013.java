@@ -49,8 +49,8 @@ public class VisionSampleProject2013 extends SimpleRobot {
     final int X_EDGE_LIMIT = 40;
     final int Y_EDGE_LIMIT = 60;
     
-    final int X_IMAGE_RES = 640;          //X Image resolution in pixels, should be 160, 320 or 640
-//    final double VIEW_ANGLE = 43.5;       //Axis 206 camera
+    final int X_IMAGE_RES = 320;          //X Image resolution in pixels, should be 160, 320 or 640
+//  final double VIEW_ANGLE = 43.5;       //Axis 206 camera
     final double VIEW_ANGLE = 48;       //Axis M1011 camera
     
     AxisCamera camera;          // the axis camera object (connected to the switch)
@@ -65,13 +65,18 @@ public class VisionSampleProject2013 extends SimpleRobot {
     }
     
     public void robotInit() {
+        System.out.println("robotInit");
         camera = AxisCamera.getInstance();  // get an instance of the camera
+        System.out.println("Camera");
         cc = new CriteriaCollection();      // create the criteria for the particle filter
+        System.out.println("CC");
         cc.addCriteria(MeasurementType.IMAQ_MT_AREA, 500, 65535, false);
+        System.out.println("leave init");
     }
 
     public void autonomous() {
-//        while (isAutonomous() && isEnabled()) {
+        System.out.println("Autonomus started");
+        while (isAutonomous() && isEnabled()) {
             try {
                 /**
                  * Do the image capture with the camera and apply the algorithm described above. This
@@ -82,17 +87,18 @@ public class VisionSampleProject2013 extends SimpleRobot {
                 ColorImage image = camera.getImage();     // comment if using stored images
                 //ColorImage image;                           // next 2 lines read image from flash on cRIO
                 //image = new RGBImage("/testImage.jpg");		// get the sample image from the cRIO flash
-                image.write("/uneditedImage.bmp");
-                BinaryImage thresholdImage = image.thresholdHSL(85, 235, 0, 15, 245, 255);   // keep only green objects
-                thresholdImage.write("/threshold.bmp");
-                BinaryImage convexHullImage = thresholdImage.convexHull(true);          // fill in occluded rectangles
-                convexHullImage.write("/convexHull.bmp");
+                BinaryImage thresholdImage = image.thresholdHSV(60, 100, 90, 255, 20, 255);   // keep only red objects
+                //thresholdImage.write("/threshold.bmp");
+                BinaryImage convexHullImage = thresholdImage.convexHull(false);          // fill in occluded rectangles
+                //convexHullImage.write("/convexHull.bmp");
                 BinaryImage filteredImage = convexHullImage.particleFilter(cc);           // filter out small particles
-                filteredImage.write("/filteredImage.bmp");
+                //filteredImage.write("/filteredImage.bmp");
                 
                 //iterate through each particle and score to see if it is a target
                 Scores scores[] = new Scores[filteredImage.getNumberParticles()];
+                System.out.println("Scores");
                 for (int i = 0; i < scores.length; i++) {
+                    System.out.println("looking for targets");
                     ParticleAnalysisReport report = filteredImage.getParticleAnalysisReport(i);
                     scores[i] = new Scores();
                     
@@ -130,14 +136,15 @@ public class VisionSampleProject2013 extends SimpleRobot {
                 ex.printStackTrace();
             } catch (NIVisionException ex) {
                 ex.printStackTrace();
-            } 
-//        }
+            }
+        }
     }
 
     /**
      * This function is called once each time the robot enters operator control.
      */
     public void operatorControl() {
+        System.out.println("Operator control");
         while (isOperatorControl() && isEnabled()) {
             Timer.delay(1);
         }
@@ -176,8 +183,8 @@ public class VisionSampleProject2013 extends SimpleRobot {
      * @param outer	Indicates whether the particle aspect ratio should be compared to the ratio for the inner target or the outer
      * @return The aspect ratio score (0-100)
      */
-    public double scoreAspectRatio(BinaryImage image, ParticleAnalysisReport report, int particleNumber, boolean outer) throws NIVisionException
-    {
+        public double scoreAspectRatio(BinaryImage image, ParticleAnalysisReport report, int particleNumber, boolean outer) throws NIVisionException
+    {  
         double rectLong, rectShort, aspectRatio, idealAspectRatio;
 
         rectLong = NIVision.MeasureParticle(image.image, particleNumber, false, MeasurementType.IMAQ_MT_EQUIVALENT_RECT_LONG_SIDE);
@@ -194,6 +201,7 @@ public class VisionSampleProject2013 extends SimpleRobot {
         }
 	return (Math.max(0, Math.min(aspectRatio, 100.0)));		//force to be in range 0-100
     }
+
     
     /**
      * Compares scores to defined limits and returns true if the particle appears to be a target

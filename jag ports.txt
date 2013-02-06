@@ -1,0 +1,12 @@
+v1 wide
+jag 2 = right cim
+jag 5 = other right cim
+jag 1 = left cim
+jag 4 = other left cim
+jag 6 = shooter
+jag 3 = unused
+
+old v1
+Jag 1 = bad
+jag 2,7 = right
+jag 3,4 = left
